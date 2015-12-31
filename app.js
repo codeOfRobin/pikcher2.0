@@ -34,14 +34,13 @@ app.get('/login', function(req, res)
 
 app.get('/auth/instagram',function(req, res)
 {
-    res.redirect(api.get_authorization_url(redirect_uri, { scope: ['likes'], state: 'a state' }));
+    res.redirect(api.get_authorization_url(redirect_uri, { scope: ['likes','public_content'], state: 'a state' }));
 });
 
 app.get('/auth/instagram/callback',function(req, res)
 {
     api.authorize_user(req.query.code, redirect_uri, function(err, result)
     {
-        console.log(result);
         if (err)
         {
             console.log(err.body);
@@ -49,10 +48,21 @@ app.get('/auth/instagram/callback',function(req, res)
         } else
         {
             console.log('Yay! Access token is ' + result.access_token);
-            res.send('You made it!!');
+            api.use({ access_token: result.access_token });
+            api.user_media_recent(result.user.id, [,] ,function(err, medias, pagination, remaining, limit)
+            {
+                var photos = []
+                for (var i=0 ; i<medias.length; i+=1)
+                {
+                    photos.push(medias[i].images.standard_resolution.url)
+                }
+                console.log(photos);
+                res.render('account',{photos:photos,user:result.user})
+            });
         }
     });
 });
+
 app.get('/logout', function(req, res){
     req.logout();
     res.redirect('/');
