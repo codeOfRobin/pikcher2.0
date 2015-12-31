@@ -1,0 +1,16 @@
+{
+  "name": "pikcher2.0",
+  "version": "2.0.0",
+  "description": "Tum sab hagte rehte ho",
+  "main": "app.js",
+  "repository": "https://github.com/codeOfRobin/pikcher2.0.git",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Robin Malhotra",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.3",
+    "passport-instagram": "^1.0.0"
+  }
+}
