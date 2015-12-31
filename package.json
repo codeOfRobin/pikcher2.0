@@ -11,6 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.13.3",
-    "passport-instagram": "^1.0.0"
+    "instagram-node": "^0.5.8",
+    "jade": "^1.11.0",
+    "parse": "^1.6.13"
   }
 }
