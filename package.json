@@ -10,9 +10,11 @@
   "author": "Robin Malhotra",
   "license": "ISC",
   "dependencies": {
+    "cookie-session": "^2.0.0-alpha.1",
     "express": "^4.13.3",
     "instagram-node": "^0.5.8",
     "jade": "^1.11.0",
+    "node-uuid": "^1.4.7",
     "parse": "^1.6.13"
   }
 }
