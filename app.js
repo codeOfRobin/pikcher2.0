@@ -1,125 +1,124 @@
-'use strict';
+var express = require("express")
+var app = express()
+var mongoose = require("mongoose")
+var passport = require("passport")
+var flash = require("connect-flash")
+var morgan       = require('morgan');
+var session      = require('express-session');
+var router       = express.Router()
+var bodyParser   = require('body-parser');
+var flash = require("connect-flash")
 
-var express = require('express')
-var http = require('http');
-var api = require('instagram-node').instagram();
-var Parse = require('parse/node');
-var uuid = require('node-uuid');
-var cookieSession = require('cookie-session')
+var InstagramStrategy = require('passport-instagram').Strategy
+mongoose.connect("mongodb://localhost:27017/pikcher")
 
-Parse.initialize("C9g2ActjM4VwIkIrP11wBuM5MJAaCpwytqq5KnlT", "itK5GZLqJ9zhk6in27OzfKUK3uVWtPowtaPsXTrr");
-
-var app = express();
-
-app.use('/static', express.static(__dirname + '/public'))
+app.use(morgan('dev'));
+app.use(bodyParser());
 app.set('view engine', 'jade');
-app.set('views', __dirname + '/templates');
-
-app.use(cookieSession({
-    name: 'session',
-    keys: ['key1', 'key2']
-}))
-
-var redirect_uri = "http://127.0.0.1:3000/auth/instagram/callback"
+app.use(session({ secret: 'ilovescotchscotchyscotchscotch' }));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(flash());
+app.set('views',__dirname + '/templates');
+app.use('/static',express.static(__dirname + '/static'))
 
 
-
-api.use({
-    client_id: "127e562651134461a7dbfeaedecda43a",
-    client_secret: "f973439e8e5f4da3a54e906ccbf98912"
+var userSchema = mongoose.Schema({
+    instaID : String,
+    displayName : String,
+    username : String,
+    profilePictureURL : String,
+    token : String
 });
+var User = mongoose.model('User', userSchema);
+passport.serializeUser(function(user, done)
+{
+    done(null, user.id);
+});
+passport.deserializeUser(function(id, done)
+{
+    User.findById(id, function(err, user) {
+        done(err, user);
+    });
+});
+
+passport.use(new InstagramStrategy({
+    clientID: "33936fbd12974e9a971d4e9e67215004",
+    clientSecret: "47a85c5d839746da9b5eaf0c114c21d0",
+    callbackURL: "http://127.0.0.1:3000/auth/instagram/callback"
+  },
+  function(accessToken, refreshToken, profile, done) {
+    // asynchronous verification, for effect...
+    process.nextTick(function () {
+        User.findOne({ 'instaID' : profile.id }, function(err, user) {
+            if (err)
+            {
+                return done(err)
+            }
+
+            if(user)
+            {
+                return done(null, user)
+            }
+            else
+            {
+                var newUser = new User()
+                newUser.instaID = profile.id
+                newUser.displayName = profile.displayName
+                newUser.username = profile.username
+                newUser.profilePictureURL = profile._json.data.profile_picture
+                newUser.token = accessToken
+
+                newUser.save(function(err) {
+                    if (err)
+                        throw err;
+                    return done(null, newUser);
+                });
+            }
+
+        })
+    });
+  }
+));
+
+
+
 
 app.get('/', function(req, res)
 {
-    res.render('index',{user:req.user});
+    res.render('index.jade'); // load the index.ejs file
 });
 
+app.get('/auth/instagram',passport.authenticate('instagram'));
 
-app.get('/login', function(req, res)
-{
-    res.render('login', { user: req.user });
+app.get('/auth/instagram/callback',
+passport.authenticate('instagram', { failureRedirect: '/login' }),
+function(req, res) {
+  // Successful authentication, redirect home.
+  res.redirect('/profile');
 });
 
-app.get('/auth/instagram',function(req, res)
-{
-    api.use({
-        client_id: "127e562651134461a7dbfeaedecda43a",
-        client_secret: "f973439e8e5f4da3a54e906ccbf98912"
+app.get('/profile', isLoggedIn, function(req, res) {
+    res.render('profile.jade', {
+        user : req.user // get the user out of session and pass to template
     });
-    res.redirect(api.get_authorization_url(redirect_uri, { scope: ['likes','public_content'], state: 'a state' }));
 });
 
-app.get('/auth/instagram/callback',function(req, res,next)
+app.get('/logout', function(req, res)
 {
-    req.url = '/admin'
-    next()
-});
-
-app.get('/admin',function(req,res)
-{
-    api.use({
-        client_id: "127e562651134461a7dbfeaedecda43a",
-        client_secret: "f973439e8e5f4da3a54e906ccbf98912"
-    });
-    var accessCode = req.session.accessCode || req.query.code
-
-    if (!accessCode)
-    {
-        res.redirect('login')
-        res.end();
-    }
-    else
-    {
-        // req.session.accessCode = accessCode
-        api.authorize_user(accessCode, redirect_uri, function(err, result)
-        {
-            if (err)
-            {
-                console.log(err);
-                res.send("Didn't work");
-            } else
-            {
-                console.log('Yay! Access token is ' + result.access_token);
-                api.use({ access_token: result.access_token });
-                api.user_media_recent(result.user.id, [,] ,function(err, medias, pagination, remaining, limit)
-                {
-                    var photos = []
-                    for (var i=0 ; i<medias.length; i+=1)
-                    {
-                        photos.push(medias[i].images.standard_resolution.url)
-                        var Photo = Parse.Object.extend("Photo");
-                        var photo = new Photo()
-                        photo.set("url",medias[i].images.standard_resolution.url)
-                        photo.set("user",result.user.id)
-                        photo.save(null, {
-                            success: function(photo) {
-                                // Execute any logic that should take place after the object is saved.
-                                // alert('New object created with objectId: ' + photo.id);
-                            },
-                            error: function(photo, error) {
-                                // Execute any logic that should take place if the save fails.
-                                // error is a Parse.Error with an error code and message.
-                                // alert('Failed to create new object, with error code: ' + error.message);
-                            }
-                        });
-                    }
-                    console.log(photos);
-                    console.log(result.user);
-
-                    res.render('account',{photos:photos,user:result.user})
-                });
-            }
-        });
-    }
-
-});
-
-app.get('/logout', function(req, res){
     req.logout();
     res.redirect('/');
 });
 
+function isLoggedIn(req, res, next) {
 
-app.listen(3000, function() {
-    console.log("The frontend server is running on port 3000!");
-});
+    // if user is authenticated in the session, carry on
+    if (req.isAuthenticated())
+        return next();
+
+    // if they aren't redirect them to the home page
+    res.redirect('/');
+}
+
+app.listen(3000)
+console.log("Chal gaya BC");
