@@ -110,6 +110,12 @@ app.get('/logout', function(req, res)
     res.redirect('/');
 });
 
+app.get('/subscription/callback',function (req,res)
+{
+    console.log(req.query)
+	res.send(req.query["hub.challenge"])
+})
+
 function isLoggedIn(req, res, next) {
 
     // if user is authenticated in the session, carry on
