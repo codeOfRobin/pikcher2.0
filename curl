@@ -7,3 +7,9 @@ curl -F 'client_id=33936fbd12974e9a971d4e9e67215004' \
      -F 'verify_token=myVerifyToken' \
      -F 'callback_url=https://ozcodrpfci.localtunnel.me/subscription/callback' \
      https://api.instagram.com/v1/subscriptions/
+     
+     
+https://api.instagram.com/v1/subscriptions?client_secret=47a85c5d839746da9b5eaf0c114c21d0&client_id=33936fbd12974e9a971d4e9e67215004
+
+
+curl -X DELETE 'https://api.instagram.com/v1/subscriptions?client_secret=47a85c5d839746da9b5eaf0c114c21d0&object=all&client_id=33936fbd12974e9a971d4e9e67215004'
