@@ -111,9 +111,10 @@ app.get('/logout', function(req, res)
     res.redirect('/');
 });
 
-app.get('/subscription/callback', function(req,res)
+app.get('/subscription/callback',function (req,res)
 {
-    res.send(req.query["hub.challenge"])
+    console.log(req.query)
+	res.send(req.query["hub.challenge"])
 })
 
 function isLoggedIn(req, res, next) {

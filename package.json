@@ -5,8 +5,8 @@
   "main": "app.js",
   "repository": "https://github.com/codeOfRobin/pikcher2.0.git",
   "scripts": {
-    "test": "nodemon --debug-brk app.js",
-    "start": "nodemon app.js"
+    "start": "nodemon app.js",
+	"test":"nodemon --debug-brk app.js"
   },
   "author": "Robin Malhotra",
   "license": "ISC",
