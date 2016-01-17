@@ -45,7 +45,8 @@ passport.deserializeUser(function(id, done)
 passport.use(new InstagramStrategy({
     clientID: "33936fbd12974e9a971d4e9e67215004",
     clientSecret: "47a85c5d839746da9b5eaf0c114c21d0",
-    callbackURL: "http://127.0.0.1:3000/auth/instagram/callback"
+    callbackURL: "http://127.0.0.1:3000/auth/instagram/callback",
+    scope: ['likes','public_content']
   },
   function(accessToken, refreshToken, profile, done) {
     // asynchronous verification, for effect...
