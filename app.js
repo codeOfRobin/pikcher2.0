@@ -8,10 +8,10 @@ var session      = require('express-session');
 var router       = express.Router()
 var bodyParser   = require('body-parser');
 var flash = require("connect-flash")
-
+var Parse = require('parse/node');
 var InstagramStrategy = require('passport-instagram').Strategy
 mongoose.connect("mongodb://localhost:27017/pikcher")
-
+Parse.initialize("8e83FbokMa5bCPDwhKOmcRejQQyEkVbCrmH0yQfB", "iwnQEHQPv8fc8aUw1LNC4xgVNX7bDX6Uostvd2tp");
 app.use(morgan('dev'));
 app.use(bodyParser());
 app.set('view engine', 'jade');
@@ -37,8 +37,20 @@ passport.serializeUser(function(user, done)
 });
 passport.deserializeUser(function(id, done)
 {
-    User.findById(id, function(err, user) {
-        done(err, user);
+    var query = new Parse.Query(Parse.User);
+    query.equalTo("objectId", id);
+    query.find({
+        success: function(results) {
+            // results is an array of Parse.Object.
+            if(results.length>0)
+            {
+                return done(null,results[0])
+            }
+        },
+
+        error: function(error) {
+            // error is an instance of Parse.Error.
+        }
     });
 });
 
@@ -47,39 +59,44 @@ passport.use(new InstagramStrategy({
     clientSecret: "47a85c5d839746da9b5eaf0c114c21d0",
     callbackURL: "http://127.0.0.1:3000/auth/instagram/callback",
     scope: ['likes','public_content']
-  },
-  function(accessToken, refreshToken, profile, done) {
-    // asynchronous verification, for effect...
-    process.nextTick(function () {
-        User.findOne({ 'instaID' : profile.id }, function(err, user) {
-            if (err)
-            {
-                return done(err)
-            }
+},
+function(accessToken, refreshToken, profile, done) {
 
-            if(user)
+    var query = new Parse.Query(Parse.User);
+    query.equalTo("instaID", profile.id);
+    query.find({
+        success: function(results) {
+            // results is an array of Parse.Object.
+            if(results.length>0)
             {
-                return done(null, user)
+                return done(null,results[0])
             }
             else
             {
-                var newUser = new User()
-                newUser.instaID = profile.id
-                newUser.displayName = profile.displayName
-                newUser.username = profile.username
-                newUser.profilePictureURL = profile._json.data.profile_picture
-                newUser.token = accessToken
-
-                newUser.save(function(err) {
-                    if (err)
-                        throw err;
-                    return done(null, newUser);
+                var user = new Parse.User();
+                user.set("username", profile.username);
+                user.set("instaID", profile.id);
+                user.set("displayName", profile.displayName);
+                user.set("profilePictureURL", profile._json.data.profile_picture);
+                user.set("token", accessToken);
+                user.set("password","asdkfhksadfhksdfhksadufhier7ghvuirtybvdfgjkhgk4uy5t84587")
+                user.signUp(null, {
+                    success: function(user) {
+                        // Hooray! Let them use the app now.
+                        return done(null, user);
+                    },
+                    error: function(user, error) {
+                        // Show the error message somewhere and let the user try again.
+                    }
                 });
             }
+        },
 
-        })
+        error: function(error) {
+            // error is an instance of Parse.Error.
+        }
     });
-  }
+}
 ));
 
 
@@ -90,15 +107,15 @@ app.get('/', function(req, res)
     res.render('index.jade'); // load the index.ejs file
 });
 app.post('/', function (req, res) {
-  res.send('POST request to homepage');
+    res.send('POST request to homepage');
 });
 app.get('/auth/instagram',passport.authenticate('instagram'));
 
 app.get('/auth/instagram/callback',
 passport.authenticate('instagram', { failureRedirect: '/login' }),
 function(req, res) {
-  // Successful authentication, redirect home.
-  res.redirect('/profile');
+    // Successful authentication, redirect home.
+    res.redirect('/profile');
 });
 
 app.get('/profile', isLoggedIn, function(req, res) {
@@ -122,7 +139,7 @@ function isLoggedIn(req, res, next) {
 
     // if user is authenticated in the session, carry on
     if (req.isAuthenticated())
-        return next();
+    return next();
 
     // if they aren't redirect them to the home page
     res.redirect('/');
