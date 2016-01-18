@@ -1,6 +1,5 @@
 var express = require("express")
 var app = express()
-var mongoose = require("mongoose")
 var passport = require("passport")
 var flash = require("connect-flash")
 var morgan       = require('morgan');
@@ -10,7 +9,9 @@ var bodyParser   = require('body-parser');
 var flash = require("connect-flash")
 var Parse = require('parse/node');
 var InstagramStrategy = require('passport-instagram').Strategy
-mongoose.connect("mongodb://localhost:27017/pikcher")
+var request = require('request')
+var async = require('async')
+
 Parse.initialize("8e83FbokMa5bCPDwhKOmcRejQQyEkVbCrmH0yQfB", "iwnQEHQPv8fc8aUw1LNC4xgVNX7bDX6Uostvd2tp");
 app.use(morgan('dev'));
 app.use(bodyParser());
@@ -22,15 +23,6 @@ app.use(flash());
 app.set('views',__dirname + '/templates');
 app.use('/static',express.static(__dirname + '/static'))
 
-
-var userSchema = mongoose.Schema({
-    instaID : String,
-    displayName : String,
-    username : String,
-    profilePictureURL : String,
-    token : String
-});
-var User = mongoose.model('User', userSchema);
 passport.serializeUser(function(user, done)
 {
     done(null, user.id);
@@ -80,26 +72,43 @@ function(accessToken, refreshToken, profile, done) {
                 user.set("profilePictureURL", profile._json.data.profile_picture);
                 user.set("token", accessToken);
                 user.set("password","asdkfhksadfhksdfhksadufhier7ghvuirtybvdfgjkhgk4uy5t84587")
+                user.set("imported","false")
                 user.signUp(null, {
                     success: function(user) {
                         // Hooray! Let them use the app now.
-                        return done(null, user);
-                    },
-                    error: function(user, error) {
-                        // Show the error message somewhere and let the user try again.
-                    }
-                });
-            }
-        },
+                        async.series([
+                            function(callback){
+                                getUserMedia(profile.id,accessToken)
+                            }
+                        ],
+                        function(err,results)
+                        {
 
-        error: function(error) {
-            // error is an instance of Parse.Error.
+                        }
+                    )
+                    return done(null, user);
+                },
+                error: function(user, error) {
+                    // Show the error message somewhere and let the user try again.
+                }
+            });
         }
-    });
+    },
+
+    error: function(error) {
+        // error is an instance of Parse.Error.
+    }
+});
 }
 ));
 
+function getUserMedia(userID, token)
+{
+    request('https://api.instagram.com/v1/users/'+userID+'/media/recent/?access_token='+token, function(error, response, body) {
+        console.log(body);
+    });
 
+}
 
 
 app.get('/', function(req, res)
