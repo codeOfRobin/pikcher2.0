@@ -89,7 +89,9 @@ app.get('/', function(req, res)
 {
     res.render('index.jade'); // load the index.ejs file
 });
-
+app.post('/', function (req, res) {
+  res.send('POST request to homepage');
+});
 app.get('/auth/instagram',passport.authenticate('instagram'));
 
 app.get('/auth/instagram/callback',
@@ -111,10 +113,9 @@ app.get('/logout', function(req, res)
     res.redirect('/');
 });
 
-app.get('/subscription/callback',function (req,res)
+app.post('/subscription/callback',function (req,res)
 {
-    console.log(req.query)
-	res.send(req.query["hub.challenge"])
+    res.send("done")
 })
 
 function isLoggedIn(req, res, next) {
