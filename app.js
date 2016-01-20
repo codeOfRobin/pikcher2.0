@@ -145,10 +145,27 @@ function(req, res) {
 	res.redirect('/profile');
 });
 
-app.get('/profile', isLoggedIn, function(req, res) {
-	res.render('profile.jade', {
-		user : req.user // get the user out of session and pass to template
+app.get('/profile', isLoggedIn, function(req, res) 
+{
+    var query = new Parse.Query(Parse.Object.extend("Photo"));
+	query.equalTo("user", req.user.get("instaID"));
+	query.find({
+		success: function(results) {
+			// results is an array of Parse.Object.
+            	res.render('profile.jade', {params:{
+                    user : req.user,
+                    images:results 
+                }
+                
+                // get the user out of session and pass to template
+            });
+		},
+
+		error: function(error) {
+			// error is an instance of Parse.Error.
+		}
 	});
+
 });
 
 app.get('/logout', function(req, res)
