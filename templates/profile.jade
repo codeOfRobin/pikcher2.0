@@ -1,9 +1,25 @@
 html
     head
+        meta(name='viewport',content="width=device-width, initial-scale=1.0")
+        link(href='https://fonts.googleapis.com/css?family=Varela+Round', rel = 'stylesheet', type='text/css')
+        link(href='./static/main.css', rel='stylesheet')
+        link(href='./static/flexbox.css', rel='stylesheet')
         title Pikcher 2.0 - Because Robin is Awesome
         
     body
+        
+        header.main-header
+            h1.name FuqIndia
+            ul.main-nav
+                li 
+                    a(href = "#") My likes
+                li 
+                    a(href = "#") Not My likes
+                 
+        // h1 #{params.user.get("token")}
+        .gallery
+            each image in params.images
+                img(src = image.get("url")) 
 
-        h1 #{params.user.get("token")}
-        each image in params.images
-            img(src = image.get("url")) 
+        footer.main-footer
+            span @copy;2016 Saurav ki chut company
