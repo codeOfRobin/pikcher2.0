@@ -25,133 +25,151 @@ app.use('/static',express.static(__dirname + '/static'))
 
 passport.serializeUser(function(user, done)
 {
-    done(null, user.id);
+	done(null, user.id);
 });
 passport.deserializeUser(function(id, done)
 {
-    var query = new Parse.Query(Parse.User);
-    query.equalTo("objectId", id);
-    query.find({
-        success: function(results) {
-            // results is an array of Parse.Object.
-            if(results.length>0)
-            {
-                return done(null,results[0])
-            }
-        },
+	var query = new Parse.Query(Parse.User);
+	query.equalTo("objectId", id);
+	query.find({
+		success: function(results) {
+			// results is an array of Parse.Object.
+			if(results.length>0)
+			{
+				return done(null,results[0])
+			}
+		},
 
-        error: function(error) {
-            // error is an instance of Parse.Error.
-        }
-    });
+		error: function(error) {
+			// error is an instance of Parse.Error.
+		}
+	});
 });
 
 passport.use(new InstagramStrategy({
-    clientID: "33936fbd12974e9a971d4e9e67215004",
-    clientSecret: "47a85c5d839746da9b5eaf0c114c21d0",
-    callbackURL: "http://127.0.0.1:3000/auth/instagram/callback",
-    scope: ['likes','public_content']
+	clientID: "33936fbd12974e9a971d4e9e67215004",
+	clientSecret: "47a85c5d839746da9b5eaf0c114c21d0",
+	callbackURL: "http://127.0.0.1:3000/auth/instagram/callback",
+	scope: ['likes','public_content']
 },
 function(accessToken, refreshToken, profile, done) {
 
-    var query = new Parse.Query(Parse.User);
-    query.equalTo("instaID", profile.id);
-    query.find({
-        success: function(results) {
-            // results is an array of Parse.Object.
-            if(results.length>0)
-            {
-                return done(null,results[0])
-            }
-            else
-            {
-                var user = new Parse.User();
-                user.set("username", profile.username);
-                user.set("instaID", profile.id);
-                user.set("displayName", profile.displayName);
-                user.set("profilePictureURL", profile._json.data.profile_picture);
-                user.set("token", accessToken);
-                user.set("password","asdkfhksadfhksdfhksadufhier7ghvuirtybvdfgjkhgk4uy5t84587")
-                user.set("imported","false")
-                user.signUp(null, {
-                    success: function(user) {
-                        // Hooray! Let them use the app now.
-                        async.series([
-                            function(callback){
-                                getUserMedia(profile.id,accessToken)
-                            }
-                        ],
-                        function(err,results)
-                        {
+	var query = new Parse.Query(Parse.User);
+	query.equalTo("instaID", profile.id);
+	query.find({
+		success: function(results) {
+			// results is an array of Parse.Object.
+			if(results.length>0)
+			{
+				return done(null,results[0])
+			}
+			else
+			{
+				var user = new Parse.User();
+				user.set("username", profile.username);
+				user.set("instaID", profile.id);
+				user.set("displayName", profile.displayName);
+				user.set("profilePictureURL", profile._json.data.profile_picture);
+				user.set("token", accessToken);
+				user.set("password","asdkfhksadfhksdfhksadufhier7ghvuirtybvdfgjkhgk4uy5t84587")
+				user.set("imported","false")
+				user.signUp(null, {
+					success: function(user) {
+						// Hooray! Let them use the app now.
+						async.series([
+							function(callback){
+								getUserMedia(profile.id,accessToken)
+							}
+						],
+						function(err,results)
+						{
 
-                        }
-                    )
-                    return done(null, user);
-                },
-                error: function(user, error) {
-                    // Show the error message somewhere and let the user try again.
-                }
-            });
-        }
-    },
+						}
+					)
+					return done(null, user);
+				},
+				error: function(user, error) {
+					// Show the error message somewhere and let the user try again.
+				}
+			});
+		}
+	},
 
-    error: function(error) {
-        // error is an instance of Parse.Error.
-    }
+	error: function(error) {
+		// error is an instance of Parse.Error.
+	}
 });
 }
 ));
 
 function getUserMedia(userID, token)
 {
-    request('https://api.instagram.com/v1/users/'+userID+'/media/recent/?access_token='+token, function(error, response, body) {
-        console.log(body);
-    });
+	request('https://api.instagram.com/v1/users/'+userID+'/media/recent/?access_token='+token, function(error, response, body) {
+		var photos = []
+		var images = JSON.parse(body)
+		for (var i=0 ; i<images.data.length ; i++)
+		{
+			var Photo = Parse.Object.extend("Photo")
+			var photo = new Photo()
+			photo.set("url",images.data[i].images.standard_resolution.url)
+			photo.set("user",userID)
+			photos.push(photo)
+		}
+		Parse.Object.saveAll(photos, {
+			success: function(list) {
+				console.log("Yay!");
+				// All the objects were saved.
+			},
+			error: function(error) {
+				// An error occurred while saving one of the objects.
+			},
+		});
+	});
 
 }
 
 
 app.get('/', function(req, res)
 {
-    res.render('index.jade'); // load the index.ejs file
+	res.render('index.jade'); // load the index.ejs file
 });
 app.post('/', function (req, res) {
-    res.send('POST request to homepage');
+	res.send('POST request to homepage');
 });
 app.get('/auth/instagram',passport.authenticate('instagram'));
 
 app.get('/auth/instagram/callback',
 passport.authenticate('instagram', { failureRedirect: '/login' }),
 function(req, res) {
-    // Successful authentication, redirect home.
-    res.redirect('/profile');
+	// Successful authentication, redirect home.
+	res.redirect('/profile');
 });
 
 app.get('/profile', isLoggedIn, function(req, res) {
-    res.render('profile.jade', {
-        user : req.user // get the user out of session and pass to template
-    });
+	res.render('profile.jade', {
+		user : req.user // get the user out of session and pass to template
+	});
 });
 
 app.get('/logout', function(req, res)
 {
-    req.logout();
-    res.redirect('/');
+	req.logout();
+	res.redirect('/');
 });
 
 app.post('/subscription/callback',function (req,res)
 {
-    res.send("done")
+	res.send("done")
 })
 
 function isLoggedIn(req, res, next) {
 
-    // if user is authenticated in the session, carry on
-    if (req.isAuthenticated())
-    return next();
+	// if user is authenticated in the session, carry on
+	if (req.isAuthenticated())
+	return next();
 
-    // if they aren't redirect them to the home page
-    res.redirect('/');
+	// if they aren't redirect them to the home page
+	res.redirect('/');
 }
 
 app.listen(3000)
