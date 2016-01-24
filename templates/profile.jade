@@ -19,8 +19,9 @@ html
         // h1 #{params.user.get("token")}
         .gallery
             each image in params.images
-                a
-                    img(src = image.get("url")) 
+                div.image
+                    a(href="./")
+                        img(src = image.get("url"))
 
-        footer.main-footer
-            span @copy;2016 Saurav ki chut company
+        // footer.main-footer
+        //     span @copy;2016 Saurav ki chut company

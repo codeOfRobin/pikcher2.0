@@ -14,7 +14,7 @@
 		flex-wrap: wrap;
         justify-content: center;
 	}
-    .gallery a
+    .gallery div
     {
         max-width: 47.5%
     }
@@ -29,8 +29,15 @@
 		flex-basis: 0;
         justify-content: center;
 	}
-    .gallery a
+    .gallery div
     {
         max-width: 33%
+    }
+}
+
+@media (min-width: 1600px){
+    .gallery div
+    {
+        max-width: 25%;
     }
 }

@@ -56,6 +56,10 @@ a {
 	background: #d9e4ea;
 	padding: 2em 0;
 }
+.gallery a
+{
+    width: 100%;
+}
 .gallery a img
 {
     width:100%;

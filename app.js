@@ -102,9 +102,10 @@ function(accessToken, refreshToken, profile, done) {
 }
 ));
 
-function getUserMedia(userID, token)
+function savePhotos(url,userID)
 {
-	request('https://api.instagram.com/v1/users/'+userID+'/media/recent/?access_token='+token, function(error, response, body) {
+    request(url, function(error, response, body) 
+    {
 		var photos = []
 		var images = JSON.parse(body)
 		for (var i=0 ; i<images.data.length ; i++)
@@ -115,6 +116,26 @@ function getUserMedia(userID, token)
 			photo.set("user",userID)
 			photos.push(photo)
 		}
+        if(!images.pagination)
+        {
+            savePhotos(images.pagination.next_url,userID)
+        }
+        else
+        {
+            var query = new Parse.Query(Parse.User);
+            query.equalTo("instaID", userID);
+            query.find({
+                success: function(results) {
+                    var currentUser = results[0]
+                    currentUser.set("imported",true)
+                    currentUser.save()
+                },
+
+                error: function(error) {
+                    // error is an instance of Parse.Error.
+                }
+            });
+        }
 		Parse.Object.saveAll(photos, {
 			success: function(list) {
 				console.log("Yay!");
@@ -125,7 +146,11 @@ function getUserMedia(userID, token)
 			},
 		});
 	});
+}
 
+function getUserMedia(userID, token)
+{
+    savePhotos('https://api.instagram.com/v1/users/'+userID+'/media/recent/?access_token='+token,userID)
 }
 
 
